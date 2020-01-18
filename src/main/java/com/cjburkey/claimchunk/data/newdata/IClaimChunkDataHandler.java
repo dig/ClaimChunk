@@ -159,6 +159,7 @@ public interface IClaimChunkDataHandler {
     void addPlayer(UUID player,
                    String lastIgn,
                    Set<UUID> permitted,
+                   Set<UUID> containerPermitted,
                    @Nullable String chunkName,
                    long lastOnlineTime,
                    boolean alerts);
@@ -173,6 +174,7 @@ public interface IClaimChunkDataHandler {
         this.addPlayer(playerData.player,
                 playerData.lastIgn,
                 playerData.permitted,
+                playerData.containerPermitted,
                 playerData.chunkName,
                 playerData.lastOnlineTime,
                 playerData.alert);
@@ -188,7 +190,7 @@ public interface IClaimChunkDataHandler {
      * @since 0.0.13
      */
     default void addPlayer(UUID player, String lastIgn, boolean alerts) {
-        this.addPlayer(player, lastIgn, new HashSet<>(), null, 0L, alerts);
+        this.addPlayer(player, lastIgn, new HashSet<>(), new HashSet<>(), null, 0L, alerts);
     }
 
     /**
@@ -310,6 +312,7 @@ public interface IClaimChunkDataHandler {
      * @since 0.0.13
      */
     void setPlayerAccess(UUID owner, UUID accessor, boolean access);
+    void setPlayerContainerAccess(UUID owner, UUID accessor, boolean access);
 
     /**
      * Gives all provided accessors access to the given owners chunks
@@ -341,6 +344,17 @@ public interface IClaimChunkDataHandler {
     UUID[] getPlayersWithAccess(UUID owner);
 
     /**
+     * Retrieves all players who have access to edit the given player's chunks
+     * for container access.
+     *
+     * @param owner The UUID of the player
+     * @return An array of UUIDs of all players who can edit this player's chunks
+     * containers.
+     * @since 0.0.13
+     */
+    UUID[] getPlayersWithContainerAccess(UUID owner);
+
+    /**
      * Retrieves whether the given accessor can edit inside the given owner's
      * chunks.
      *
@@ -350,5 +364,6 @@ public interface IClaimChunkDataHandler {
      * @since 0.0.13
      */
     boolean playerHasAccess(UUID owner, UUID accessor);
+    boolean playerHasContainerAccess(UUID owner, UUID accessor);
 
 }

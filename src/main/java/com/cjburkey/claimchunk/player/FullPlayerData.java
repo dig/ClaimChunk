@@ -9,6 +9,7 @@ public class FullPlayerData implements Cloneable {
     public final UUID player;
     public final String lastIgn;
     public final Set<UUID> permitted;
+    public final Set<UUID> containerPermitted;
     public String chunkName;
     public long lastOnlineTime;
     public boolean alert;
@@ -16,12 +17,14 @@ public class FullPlayerData implements Cloneable {
     public FullPlayerData(UUID player,
                           String lastIgn,
                           Set<UUID> permitted,
+                          Set<UUID> containerPermitted,
                           String chunkName,
                           long lastOnlineTime,
                           boolean alert) {
         this.player = player;
         this.lastIgn = lastIgn;
         this.permitted = new HashSet<>(permitted);
+        this.containerPermitted = new HashSet<>(containerPermitted);
         this.chunkName = chunkName;
         this.lastOnlineTime = lastOnlineTime;
         this.alert = alert;
@@ -31,6 +34,7 @@ public class FullPlayerData implements Cloneable {
         this(clone.player,
                 clone.lastIgn,
                 clone.permitted,
+                clone.containerPermitted,
                 clone.chunkName,
                 clone.lastOnlineTime,
                 clone.alert);

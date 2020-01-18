@@ -37,12 +37,25 @@ public class PlayerHandler {
         return newVal;
     }
 
+    public boolean toggleContainerAccess(UUID owner, UUID accessee) {
+        boolean newVal = !hasContainerAccess(owner, accessee);
+        dataHandler.setPlayerContainerAccess(owner, accessee, newVal);
+        return newVal;
+    }
+
     public boolean hasAccess(UUID owner, UUID accessee) {
         return dataHandler.playerHasAccess(owner, accessee);
     }
 
+    public boolean hasContainerAccess(UUID owner, UUID accessee) {
+        return dataHandler.playerHasContainerAccess(owner, accessee);
+    }
+
     public UUID[] getAccessPermitted(UUID owner) {
         return dataHandler.getPlayersWithAccess(owner);
+    }
+    public UUID[] getContainerAccessPermitted(UUID owner) {
+        return dataHandler.getPlayersWithContainerAccess(owner);
     }
 
     public boolean toggleAlerts(UUID player) {

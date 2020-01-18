@@ -55,6 +55,12 @@ public class MySQLDataHandler<T extends IClaimChunkDataHandler> implements IClai
     private static final String ACCESS_OWNER = "owner_uuid";
     private static final String ACCESS_OTHER = "other_uuid";
 
+    private static final String CONTAINER_ACCESS_TABLE_NAME = "container_access_granted";
+    private static final String CONTAINER_ACCESS_ACCESS_ID = "container_access_id";
+    private static final String CONTAINER_ACCESS_CHUNK_ID = "chunk_id";
+    private static final String CONTAINER_ACCESS_OWNER = "owner_uuid";
+    private static final String CONTAINER_ACCESS_OTHER = "other_uuid";
+
     Supplier<Connection> connection;
     private String dbName;
     private T oldDataHandler;
@@ -291,6 +297,7 @@ public class MySQLDataHandler<T extends IClaimChunkDataHandler> implements IClai
     public void addPlayer(UUID player,
                           String lastIgn,
                           Set<UUID> permitted,
+                          Set<UUID> containerPermitted,
                           @Nullable String chunkName,
                           long lastOnlineTime,
                           boolean alerts) {
@@ -497,6 +504,7 @@ public class MySQLDataHandler<T extends IClaimChunkDataHandler> implements IClai
                         uuid,
                         result.getString(2),
                         new HashSet<>(Arrays.asList(getPlayersWithAccess(uuid))),
+                        new HashSet<>(Arrays.asList(getPlayersWithContainerAccess(uuid))),
                         result.getString(3),
                         result.getLong(4),
                         result.getBoolean(5)
@@ -526,6 +534,34 @@ public class MySQLDataHandler<T extends IClaimChunkDataHandler> implements IClai
         } else {
             String sql = String.format("DELETE FROM `%s` WHERE `%s`=? AND `%s`=?",
                     ACCESS_TABLE_NAME, ACCESS_OWNER, ACCESS_OTHER);
+            try (PreparedStatement statement = prep(connection, sql)) {
+                statement.setString(1, owner.toString());
+                statement.setString(2, accessor.toString());
+                statement.execute();
+            } catch (Exception e) {
+                Utils.err("Failed to remove player chunk access: %s", e.getMessage());
+                e.printStackTrace();
+            }
+        }
+    }
+
+    @Override
+    public void setPlayerContainerAccess(UUID owner, UUID accessor, boolean access) {
+        if (access == playerHasContainerAccess(owner, accessor)) return;
+        if (access) {
+            String sql = String.format("INSERT INTO `%s` (`%s`, `%s`) VALUES (?, ?)",
+                    CONTAINER_ACCESS_TABLE_NAME, CONTAINER_ACCESS_OWNER, CONTAINER_ACCESS_OTHER);
+            try (PreparedStatement statement = prep(connection, sql)) {
+                statement.setString(1, owner.toString());
+                statement.setString(2, accessor.toString());
+                statement.execute();
+            } catch (Exception e) {
+                Utils.err("Failed give player chunk access: %s", e.getMessage());
+                e.printStackTrace();
+            }
+        } else {
+            String sql = String.format("DELETE FROM `%s` WHERE `%s`=? AND `%s`=?",
+                    CONTAINER_ACCESS_TABLE_NAME, CONTAINER_ACCESS_OWNER, CONTAINER_ACCESS_OTHER);
             try (PreparedStatement statement = prep(connection, sql)) {
                 statement.setString(1, owner.toString());
                 statement.setString(2, accessor.toString());
@@ -613,9 +649,45 @@ public class MySQLDataHandler<T extends IClaimChunkDataHandler> implements IClai
     }
 
     @Override
+    public boolean playerHasContainerAccess(UUID owner, UUID accessor) {
+        String sql = String.format("SELECT count(*) FROM `%s` WHERE `%s`=? AND `%s`=?",
+                CONTAINER_ACCESS_TABLE_NAME, CONTAINER_ACCESS_OWNER, CONTAINER_ACCESS_OTHER);
+        try (PreparedStatement statement = prep(connection, sql)) {
+            statement.setString(1, owner.toString());
+            statement.setString(2, accessor.toString());
+            try (ResultSet result = statement.executeQuery()) {
+                if (result.next()) return result.getInt(1) > 0;
+            }
+        } catch (Exception e) {
+            Utils.err("Failed to check player access: %s", e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    @Override
     public UUID[] getPlayersWithAccess(UUID owner) {
         String sql = String.format("SELECT `%s` FROM `%s` WHERE `%s`=?",
                 ACCESS_OTHER, ACCESS_TABLE_NAME, ACCESS_OWNER);
+        List<UUID> accessors = new ArrayList<>();
+        try (PreparedStatement statement = prep(connection, sql)) {
+            statement.setString(1, owner.toString());
+            try (ResultSet result = statement.executeQuery()) {
+                while (result.next()) {
+                    accessors.add(UUID.fromString(result.getString(1)));
+                }
+            }
+        } catch (Exception e) {
+            Utils.err("Failed to get all claimed chunks: %s", e.getMessage());
+            e.printStackTrace();
+        }
+        return accessors.toArray(new UUID[0]);
+    }
+
+    @Override
+    public UUID[] getPlayersWithContainerAccess(UUID owner) {
+        String sql = String.format("SELECT `%s` FROM `%s` WHERE `%s`=?",
+                CONTAINER_ACCESS_OTHER, CONTAINER_ACCESS_TABLE_NAME, CONTAINER_ACCESS_OWNER);
         List<UUID> accessors = new ArrayList<>();
         try (PreparedStatement statement = prep(connection, sql)) {
             statement.setString(1, owner.toString());

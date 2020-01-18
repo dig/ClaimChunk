@@ -55,6 +55,14 @@ public final class Messages {
     public String accessOneself = "&cYou already have access to your own chunks";
     public String accessNoOthers = "&cNo other players have access to your chunks";
 
+    // Container access localization
+    public String containerAccessNoPerm = "&cYou do not have permission to give container access to chunks";
+    public String containerAccessHas = "&a%%PLAYER%% now has access to containers in your chunks";
+    public String containerAccessNoLongerHas = "&a%%PLAYER%% no longer has access to containers in your chunks";
+    public String containerAccessToggleMultiple = "&aThe provided players'' container access to your chunks has been toggled";
+    public String containerAccessOneself = "&cYou already have container access to your own chunks";
+    public String containerAccessNoOthers = "&cNo other players have container access to your chunks";
+
     // TNT localization
     public String tntNoPerm = "&cYou do not have permission to toggle TNT in this chunk";
     public String tntAlreadyEnabled = "&cTNT is already enabled in the config";
@@ -128,6 +136,7 @@ public final class Messages {
     public String cmdUnclaimAll = "Unclaim all the chunks you own in this world";
     public String cmdAdminUnclaimAll = "Unclaim all the chunks of the specified player in this world as an admin";
     public String cmdGive = "Give the chunk you're standing in to <player>";
+    public String cmdChests = "Toggle container access for [player] in your claimed territory or list players that have access to containers in your chunks";
 
     /* LOADING */
 

@@ -246,8 +246,31 @@ public final class MainHandler {
         }
     }
 
+    private static void containerAccessChunk(Player p, String player, boolean multiple) {
+        if (!Utils.hasPerm(p, true, "claim")) {
+            Utils.toPlayer(p, ClaimChunk.getInstance().getMessages().containerAccessNoPerm);
+            return;
+        }
+
+        Player other = ClaimChunk.getInstance().getServer().getPlayer(player);
+        if (other != null) {
+            toggleContainerAccess(p, other.getUniqueId(), other.getName(), multiple);
+        } else {
+            UUID otherId = ClaimChunk.getInstance().getPlayerHandler().getUUID(player);
+            if (otherId == null) {
+                Utils.toPlayer(p, ClaimChunk.getInstance().getMessages().noPlayer);
+                return;
+            }
+            toggleContainerAccess(p, otherId, player, multiple);
+        }
+    }
+
     public static void accessChunk(Player p, String[] players) {
         for (String player : players) accessChunk(p, player, players.length > 1);
+    }
+
+    public static void containerAccessChunk(Player p, String[] players) {
+        for (String player : players) containerAccessChunk(p, player, players.length > 1);
     }
 
     private static void toggleAccess(Player owner, UUID other, String otherName, boolean multiple) {
@@ -265,6 +288,21 @@ public final class MainHandler {
                 (multiple ? ClaimChunk.getInstance().getMessages().accessToggleMultiple : ClaimChunk.getInstance().getMessages().accessNoLongerHas).replace("%%PLAYER%%", otherName));
     }
 
+    private static void toggleContainerAccess(Player owner, UUID other, String otherName, boolean multiple) {
+        if (owner.getUniqueId().equals(other)) {
+            Utils.toPlayer(owner, ClaimChunk.getInstance().getMessages().containerAccessOneself);
+            return;
+        }
+        boolean hasAccess = ClaimChunk.getInstance().getPlayerHandler().toggleContainerAccess(owner.getUniqueId(), other);
+        if (hasAccess) {
+            Utils.toPlayer(owner,
+                    (multiple ? ClaimChunk.getInstance().getMessages().containerAccessToggleMultiple : ClaimChunk.getInstance().getMessages().containerAccessHas).replace("%%PLAYER%%", otherName));
+            return;
+        }
+        Utils.toPlayer(owner,
+                (multiple ? ClaimChunk.getInstance().getMessages().containerAccessToggleMultiple : ClaimChunk.getInstance().getMessages().containerAccessNoLongerHas).replace("%%PLAYER%%", otherName));
+    }
+
     public static void listAccessors(Player executor) {
         Utils.msg(executor, Config.infoColor() + "&l---[ ClaimChunk Access ] ---");
         boolean anyOthersHaveAccess = false;
@@ -277,6 +315,21 @@ public final class MainHandler {
         }
         if (!anyOthersHaveAccess) {
             Utils.msg(executor, "  " + ClaimChunk.getInstance().getMessages().accessNoOthers);
+        }
+    }
+
+    public static void listContainerAccessors(Player executor) {
+        Utils.msg(executor, Config.infoColor() + "&l---[ ClaimChunk Container Access ] ---");
+        boolean anyOthersHaveAccess = false;
+        for (UUID player : ClaimChunk.getInstance().getPlayerHandler().getContainerAccessPermitted(executor.getUniqueId())) {
+            String name = ClaimChunk.getInstance().getPlayerHandler().getUsername(player);
+            if (name != null) {
+                Utils.msg(executor, Config.infoColor() + "  - " + name);
+                anyOthersHaveAccess = true;
+            }
+        }
+        if (!anyOthersHaveAccess) {
+            Utils.msg(executor, "  " + ClaimChunk.getInstance().getMessages().containerAccessNoOthers);
         }
     }
 

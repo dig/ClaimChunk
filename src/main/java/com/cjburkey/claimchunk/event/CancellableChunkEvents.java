@@ -33,7 +33,7 @@ public class CancellableChunkEvents implements Listener {
     @EventHandler
     public void onBlockBroken(BlockBreakEvent e) {
         if (e != null) {
-            ChunkEventHelper.handleBlockEvent(e.getPlayer(), e.getBlock().getChunk(), e);
+            ChunkEventHelper.handleBlockEvent(e.getPlayer(), e.getBlock(), e);
         }
     }
 
@@ -41,7 +41,7 @@ public class CancellableChunkEvents implements Listener {
     @EventHandler
     public void onBlockPlaced(BlockPlaceEvent e) {
         if (e != null) {
-            ChunkEventHelper.handleBlockEvent(e.getPlayer(), e.getBlock().getChunk(), e);
+            ChunkEventHelper.handleBlockEvent(e.getPlayer(), e.getBlock(), e);
         }
     }
 
@@ -53,7 +53,7 @@ public class CancellableChunkEvents implements Listener {
                 && e.getAction() != Action.LEFT_CLICK_BLOCK
                 && e.getAction() != Action.LEFT_CLICK_AIR
                 && e.getAction() != Action.RIGHT_CLICK_AIR) {
-            ChunkEventHelper.handleInteractionEvent(e.getPlayer(), e.getClickedBlock().getChunk(), e);
+            ChunkEventHelper.handleInteractionEvent(e.getPlayer(), e.getClickedBlock(), e);
         }
     }
 

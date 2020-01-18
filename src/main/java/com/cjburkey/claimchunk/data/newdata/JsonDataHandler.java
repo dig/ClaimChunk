@@ -143,10 +143,11 @@ public class JsonDataHandler implements IClaimChunkDataHandler {
     public void addPlayer(UUID player,
                           String lastIgn,
                           Set<UUID> permitted,
+                          Set<UUID> containerPermitted,
                           String chunkName,
                           long lastOnlineTime,
                           boolean alerts) {
-        joinedPlayers.put(player, new FullPlayerData(player, lastIgn, permitted, chunkName, lastOnlineTime, alerts));
+        joinedPlayers.put(player, new FullPlayerData(player, lastIgn, permitted, containerPermitted, chunkName, lastOnlineTime, alerts));
     }
 
     @Override
@@ -200,6 +201,15 @@ public class JsonDataHandler implements IClaimChunkDataHandler {
     }
 
     @Override
+    public void setPlayerContainerAccess(UUID owner, UUID accessor, boolean access) {
+        FullPlayerData ply = joinedPlayers.get(owner);
+        if (ply != null) {
+            if (access) ply.containerPermitted.add(accessor);
+            else ply.containerPermitted.remove(accessor);
+        }
+    }
+
+    @Override
     public void givePlayersAcess(UUID owner, UUID[] accessors) {
         FullPlayerData ply = joinedPlayers.get(owner);
         if (ply != null) Collections.addAll(ply.permitted, accessors);
@@ -221,10 +231,28 @@ public class JsonDataHandler implements IClaimChunkDataHandler {
     }
 
     @Override
+    public UUID[] getPlayersWithContainerAccess(UUID owner) {
+        FullPlayerData ply = joinedPlayers.get(owner);
+        if (ply != null) {
+            return ply.containerPermitted.toArray(new UUID[0]);
+        }
+        return new UUID[0];
+    }
+
+    @Override
     public boolean playerHasAccess(UUID owner, UUID accessor) {
         FullPlayerData ply = joinedPlayers.get(owner);
         if (ply != null) {
             return ply.permitted.contains(accessor);
+        }
+        return false;
+    }
+
+    @Override
+    public boolean playerHasContainerAccess(UUID owner, UUID accessor) {
+        FullPlayerData ply = joinedPlayers.get(owner);
+        if (ply != null) {
+            return ply.containerPermitted.contains(accessor);
         }
         return false;
     }

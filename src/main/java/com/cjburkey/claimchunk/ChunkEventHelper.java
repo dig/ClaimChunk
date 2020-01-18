@@ -1,16 +1,15 @@
 package com.cjburkey.claimchunk;
 
 import com.cjburkey.claimchunk.chunk.ChunkHandler;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+
+import java.util.*;
 import javax.annotation.Nonnull;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -23,6 +22,7 @@ import org.bukkit.event.block.BlockSpreadEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.inventory.InventoryHolder;
 
 public final class ChunkEventHelper {
 
@@ -59,6 +59,39 @@ public final class ChunkEventHelper {
         return ClaimChunk.getInstance().getPlayerHandler().hasAccess(PLY_OWNER, plyEditor) || isOfflineAndUnprotected;
     }
 
+    public static boolean getCanContainerEdit(@Nonnull Chunk chunk, @Nonnull UUID plyEditor) {
+        // If the user is an admin, they have permission to override chunk claims.
+        if (Utils.hasAdmin(Bukkit.getPlayer(plyEditor))) {
+            return true;
+        }
+
+        // Glboal chunk handler
+        final ChunkHandler CHUNK = ClaimChunk.getInstance().getChunkHandler();
+
+        // This chunk's owner
+        final UUID PLY_OWNER = CHUNK.getOwner(chunk);
+
+        // If the chunk isn't claimed, users can't edit if the server has
+        // protections in unclaiemd chunks.
+        if (PLY_OWNER == null) {
+            return !Config.getBool("protection", "blockUnclaimedChunks");
+        }
+
+        // If the player is the owner, they can edit it. Obviously.
+        if (PLY_OWNER.equals(plyEditor)) {
+            return true;
+        }
+
+        // Check if the chunk is owned by an offline player and if players
+        // should be allowed to edit in chunks with offline owners.
+        boolean isOfflineAndUnprotected = Config.getBool("protection", "disableOfflineProtect")
+                && Bukkit.getPlayer(PLY_OWNER) == null;
+
+        // If the player has access or if the server allows editing offline
+        // players' chunks, this player can edit.
+        return ClaimChunk.getInstance().getPlayerHandler().hasContainerAccess(PLY_OWNER, plyEditor) || isOfflineAndUnprotected;
+    }
+
     private static void handlePlayerEvent(@Nonnull Player ply,
                                           @Nonnull Chunk chunk,
                                           @Nonnull Cancellable e,
@@ -92,8 +125,52 @@ public final class ChunkEventHelper {
         }
     }
 
+    private static void handlePlayerContainerEvent(@Nonnull Player ply,
+                                          @Nonnull Chunk chunk,
+                                          @Nonnull Cancellable e,
+                                          @Nonnull String config,
+                                          boolean interactionCancellable) {
+        if (e.isCancelled()) {
+            return;
+        }
+
+        // Check if this isn't protected within the config.
+        if (!Config.getBool("protection", config)) {
+            return;
+        }
+
+        // If the user is permitted to edit here, then they bypass protections.
+        if (getCanContainerEdit(chunk, ply.getUniqueId())) {
+            return;
+        }
+
+        // Cancel the event
+        e.setCancelled(true);
+
+        // Display cancellation message;
+        String username = ClaimChunk.getInstance().getPlayerHandler().getUsername(ClaimChunk.getInstance().getChunkHandler().getOwner(chunk));
+
+        // Send the not allowed to edit message
+        if (username != null) {
+            Utils.toPlayer(ply, ClaimChunk.getInstance().getMessages().chunkNoEdit.replace("%%PLAYER%%", username));
+        }
+    }
+
+    public static void handleBlockEvent(@Nonnull Player ply, @Nonnull Block block, @Nonnull Cancellable e) {
+        handlePlayerEvent(ply, block.getChunk(), e, "blockPlayerChanges", false);
+    }
+
     public static void handleBlockEvent(@Nonnull Player ply, @Nonnull Chunk chunk, @Nonnull Cancellable e) {
         handlePlayerEvent(ply, chunk, e, "blockPlayerChanges", false);
+    }
+
+    public static void handleInteractionEvent(@Nonnull Player ply, @Nonnull Block block, @Nonnull Cancellable e) {
+        BlockState blockState = block.getState();
+        if (blockState instanceof InventoryHolder) {
+            handlePlayerContainerEvent(ply, block.getChunk(), e, "blockInteractions", true);
+        } else {
+            handlePlayerEvent(ply, block.getChunk(), e, "blockInteractions", true);
+        }
     }
 
     public static void handleInteractionEvent(@Nonnull Player ply, @Nonnull Chunk chunk, @Nonnull Cancellable e) {

@@ -148,10 +148,11 @@ public class BulkMySQLDataHandler<T extends IClaimChunkDataHandler> extends MySQ
     public void addPlayer(UUID player,
                           String lastIgn,
                           Set<UUID> permitted,
+                          Set<UUID> containerPermitted,
                           String chunkName,
                           long lastOnlineTime,
                           boolean alerts) {
-        dataHandler.addPlayer(player, lastIgn, permitted, chunkName, lastOnlineTime, alerts);
+        dataHandler.addPlayer(player, lastIgn, permitted, containerPermitted, chunkName, lastOnlineTime, alerts);
     }
 
     @Override
